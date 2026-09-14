@@ -6,11 +6,72 @@ authors = [
     {name = "CaioWill",email = "caio5.william5@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13,<4.0"
 dependencies = [
+    "fastapi[standard] (>=0.141.1,<0.142.0)",
+    "alembic (>=1.20.0,<2.0.0)",
+    "psycopg[binary] (>=3.3.5,<4.0.0)",
+    "pydantic-settings (>=2.15.0,<3.0.0)",
+    "pyjwt (>=2.14.0,<3.0.0)",
+    "sqlalchemy[asyncio] (>=2.0.52,<3.0.0)",
+    "pwdlib[argon2] (>=0.3.1,<0.4.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "ruff (>=0.16.7,<0.17.0)",
+    "typos (>=1.50.1,<2.0.0)",
+    "pytest-asyncio (>=1.4.0,<2.0.0)",
+    "factory-boy (>=3.3.3,<4.0.0)",
+    "freezegun (>=1.5.5,<2.0.0)",
+    "testcontainers (>=4.15.0,<5.0.0)"
+]
+
+
+[tool.ruff]
+line-length = 79
+extend-exclude = ['migrations']
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT', 'FAST']
+
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+[tool.pytest.ini_options]
+pythonpath = ['.']
+addopts = ['-p', 'no:warnings']
+asyncio_default_fixure_loop_scope = 'function'
+
+[tool.coverage.run]
+concurrency = ["thread", 'greenlet']
+
+[tool.typos.files]
+extend-exclude = ['migrations', '*.md']
+
+[tool.poe.tasks]
+lint = "ruff check"
+format.sequence = [
+  { cmd = "ruff check --fix" },
+  { cmd = "ruff format" },
+]
+server = "fastapi dev fastapi_zero/app.py"
+server3 = "uvicorn fastapi_zero.app:app --workers 3"
+test.sequence = [
+  "lint",
+  { cmd = "pytest -x -vv --cov=fastapi_zero" },
+  { cmd = "coverage html" },
+]
+
+
+[tool.poe]
+poetry_command = ""
