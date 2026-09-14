@@ -64,11 +64,11 @@ format.sequence = [
   { cmd = "ruff check --fix" },
   { cmd = "ruff format" },
 ]
-server = "fastapi dev fastapi_zero/app.py"
-server3 = "uvicorn fastapi_zero.app:app --workers 3"
+server = "fastapi dev madr/app.py"
+server3 = "uvicorn madr.app:app --workers 3"
 test.sequence = [
   "lint",
-  { cmd = "pytest -x -vv --cov=fastapi_zero" },
+  { cmd = "pytest -x -vv --cov=madr" },
   { cmd = "coverage html" },
 ]
 
