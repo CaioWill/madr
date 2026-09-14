@@ -10,7 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr.database_conect import get_session
 from madr.models import User
-from madr.schemas.schema_Auths import UpdateCredencias, UserPublic, UserSchema
+from madr.schemas.schema_Auths import (
+    UpdateCredencias,
+    UserPublic,
+    UserSchema,
+    UserUpdate,
+)
 from madr.security import criptografar, get_current
 
 router = APIRouter(prefix='/login', tags=['login'])
@@ -71,12 +76,11 @@ async def criar_conta(session: Session, user: UserSchema):
     response_model=UserPublic,
 )
 async def update_user(
-    user: UserSchema,
+    user: UserUpdate,
     session: Session,
     current_user: Current_user,
 ):
 
-    current_user.email = user.email
     current_user.username = user.username
     # alterando a senha limpa recebida para um hash
     current_user.password = criptografar(user.password)
