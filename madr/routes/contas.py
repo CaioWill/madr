@@ -66,21 +66,15 @@ async def criar_conta(session: Session, user: UserSchema):
 
 # Endpoint para atualizar um novo usuario
 @router.put(
-    '/{user_id}',  # adicionamos a variavel, paramentro da url
+    '/update_user',  # adicionamos a variavel, paramentro da url
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
 )
 async def update_user(
-    user_id: int,
     user: UserSchema,
     session: Session,
     current_user: Current_user,
 ):
-
-    if current_user.id != user_id:
-        raise HTTPException(
-            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
-        )
 
     current_user.email = user.email
     current_user.username = user.username
