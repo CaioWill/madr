@@ -13,6 +13,9 @@ class UserSchema(BaseModel):
     email: EmailStr
     password: str
 
+class UserUpdate(BaseModel):
+    username: str
+    password: str
 
 class UserPublic(BaseModel):
     username: str
