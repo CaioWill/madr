@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, EmailStr
 
 
@@ -7,7 +5,6 @@ class UserSchema(BaseModel):
     username: str
     email: EmailStr
     password: str
-    is_admin: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -18,10 +15,6 @@ class UserUpdate(BaseModel):
 class UserPublic(BaseModel):
     username: str
     email: EmailStr
-
-
-class UserList(BaseModel):
-    users: list[UserPublic]
 
 
 class Keyadmin(BaseModel):
@@ -35,6 +28,10 @@ class UpdateAdmin(BaseModel):
 
 class AdminPublic(UserPublic):
     is_admin: bool
+
+
+class UserList(BaseModel):
+    users: list[AdminPublic]
 
 
 class Token(BaseModel):
