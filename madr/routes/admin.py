@@ -8,7 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr.database_conect import get_session
 from madr.models import User
-from madr.schemas.schema_Auths import AdminPublic, Keyadmin, UpdateAdmin
+from madr.schemas.schema import Mensagem
+from madr.schemas.schema_Auths import (
+    AdminPublic,
+    Keyadmin,
+    UpdateAdmin,
+    UserList,
+)
 from madr.security import get_current
 from madr.settings import Settings
 
@@ -88,3 +94,41 @@ async def update_credenciais_users(
             status_code=HTTPStatus.CONFLICT,
             detail='User name or Email already exists',
         )
+
+
+@router.get(
+    '/listar_usuarios', status_code=HTTPStatus.OK, response_model=UserList
+)
+async def usuarios(current_user: Current_user, session: Session):
+    if current_user.is_admin:
+        users = await session.scalars(select(User))
+    else:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Você não tem autorização para ver os usuarios',
+        )
+
+    return {'users': users}
+
+
+@router.delete(
+    '/delete{username}', status_code=HTTPStatus.OK, response_model=Mensagem
+)
+async def delete_user(
+    username: str, current_user: Current_user, session: Session
+):
+
+    user = await session.scalar(select(User).where(User.username == username))
+
+    if not user:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Usuario: {username} Não encontrado',
+        )
+
+    name = user.username
+
+    await session.delete(user)
+    await session.commit()
+
+    return {'mensagem': f'Conta com username: {name} deletada permanetimente!'}
