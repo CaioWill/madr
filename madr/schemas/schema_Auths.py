@@ -24,6 +24,10 @@ class UserList(BaseModel):
     users: list[UserPublic]
 
 
+class Keyadmin(BaseModel):
+    key: str
+
+
 class UpdateAdmin(BaseModel):
     username: str
     credencial: str
