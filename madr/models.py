@@ -14,7 +14,7 @@ class User:
     username: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
-    is_admin: Mapped[bool] = mapped_column(server_default=false())
+    is_admin: Mapped[bool] = mapped_column(default=false(), nullable=False)
     criacao: Mapped[datetime] = mapped_column(
         init=False, server_default=func.now()
     )
