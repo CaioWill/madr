@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import false, func
 from sqlalchemy.orm import Mapped, mapped_column, registry
 
 tabelas = registry()
@@ -14,7 +14,7 @@ class User:
     username: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
-    credenciais: Mapped[str] = mapped_column(init=False, server_default='User')
+    is_admin: Mapped[bool] = mapped_column(server_default=false())
     criacao: Mapped[datetime] = mapped_column(
         init=False, server_default=func.now()
     )
