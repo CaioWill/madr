@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import ForeignKey, false, func
 from sqlalchemy.orm import Mapped, mapped_column, registry, relationship
@@ -46,11 +46,12 @@ class Livros:
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     name: Mapped[str]
-    create: Mapped[datetime]
+    publication: Mapped[date]
     created_at: Mapped[datetime] = mapped_column(
         init=False, server_default=func.now()
     )
     update_at: Mapped[datetime] = mapped_column(
         init=False, server_default=func.now(), server_onupdate=func.now()
     )
-    author: Mapped[int] = mapped_column(ForeignKey(Romancistas.id))
+    author_id: Mapped[int] = mapped_column(ForeignKey(Romancistas.id))
+    author: Mapped[str]
