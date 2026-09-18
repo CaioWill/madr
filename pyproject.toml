@@ -68,7 +68,7 @@ server = "fastapi dev madr/app.py"
 server3 = "uvicorn madr.app:app --workers 3"
 test.sequence = [
   "lint",
-  { cmd = "pytest -x -vv --cov=madr" },
+  { cmd = "pytest -vv --cov=madr" },
   { cmd = "coverage html" },
 ]
 
