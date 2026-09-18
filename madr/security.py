@@ -1,3 +1,5 @@
+import re
+import unicodedata
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Annotated
@@ -21,6 +23,19 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl='auth/token', refreshUrl='auth/refresh_toke'
 )
+
+
+def format_name(name):
+    name_formater = name
+    formatacao_username = (
+        unicodedata
+        .normalize('NFKD', name_formater)
+        .encode('ASCII', 'ignore')
+        .decode('ASCII')
+    )
+    name = re.sub(r'[^a-zA-Z0-9 ]', '', formatacao_username)
+
+    return name
 
 
 def criptografar(senha):
