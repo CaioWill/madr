@@ -1,5 +1,3 @@
-import re
-import unicodedata
 from http import HTTPStatus
 from typing import Annotated
 
@@ -16,7 +14,7 @@ from madr.schemas.schema_Auths import (
     UserSchema,
     UserUpdate,
 )
-from madr.security import criptografar, get_current
+from madr.security import criptografar, format_name, get_current
 
 router = APIRouter(prefix='/login', tags=['login'])
 
@@ -29,14 +27,7 @@ Current_user = Annotated[User, Depends(get_current)]
 async def criar_conta(session: Session, user: UserSchema):
 
     # Formatação do username
-    username_novo_user = user.username
-    formatacao_username = (
-        unicodedata
-        .normalize('NFKD', username_novo_user)
-        .encode('ASCII', 'ignore')
-        .decode('ASCII')
-    )
-    user.username = re.sub(r'[^a-zA-Z0-9 ]', '', formatacao_username)
+    user.name = format_name(user.name)
 
     # Procurando se o novo usuario não da conflito com os campos uniques
     response = await session.scalar(
