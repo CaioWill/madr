@@ -79,3 +79,12 @@ async def get_current(
         raise credentials_exception
 
     return user
+
+
+def get_current_admin(current_user: Annotated[User, Depends(get_current)]):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
+        )
+
+    return current_user
