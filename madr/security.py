@@ -18,7 +18,9 @@ pwd_contexto = PasswordHash.recommended()
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl='auth/token', refreshUrl='auth/refresh_toke'
+)
 
 
 def criptografar(senha):
