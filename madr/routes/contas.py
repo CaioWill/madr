@@ -98,7 +98,7 @@ async def update_user(
         await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
-            detail='User name or Email already exists',
+            detail='User name already exists',
         )
 
 
