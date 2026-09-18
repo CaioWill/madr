@@ -3,7 +3,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr.database_conect import get_session
@@ -15,13 +14,14 @@ from madr.schemas.schema_Auths import (
     UpdateAdmin,
     UserList,
 )
-from madr.security import get_current
+from madr.security import get_current, get_current_admin
 from madr.settings import Settings
 
 router = APIRouter(prefix='/admin', tags=['Admin'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 Current_user = Annotated[User, Depends(get_current)]
+Current_user_admin = Annotated[User, Depends(get_current_admin)]
 
 
 @router.put('/', status_code=HTTPStatus.OK, response_model=AdminPublic)
@@ -53,13 +53,8 @@ async def credenciais(
 async def update_credenciais_users(
     user: UpdateAdmin,
     session: Session,
-    current_user: Current_user,
+    current_user: Current_user_admin,
 ):
-
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
-        )
 
     response = await session.scalar(
         select(User).where(User.username == user.username)
@@ -72,41 +67,24 @@ async def update_credenciais_users(
 
     if user.credencial == 'admin':
         response.is_admin = True
-    elif user.credencial == 'user':
-        response.is_admin = False
     else:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail='Digite um valor valido'
         )
 
-    # tentando fazer o commit da trasação
-    try:
-        session.add(response)
-        await session.commit()
-        await session.refresh(response)
+    session.add(response)
+    await session.commit()
+    await session.refresh(response)
 
-        return response
-
-    # Caso dê erro de integridade
-    except IntegrityError:
-        await session.rollback()
-        raise HTTPException(
-            status_code=HTTPStatus.CONFLICT,
-            detail='User name or Email already exists',
-        )
+    return response
 
 
 @router.get(
     '/listar_usuarios', status_code=HTTPStatus.OK, response_model=UserList
 )
-async def usuarios(current_user: Current_user, session: Session):
-    if current_user.is_admin:
-        users = await session.scalars(select(User))
-    else:
-        raise HTTPException(
-            status_code=HTTPStatus.FORBIDDEN,
-            detail='Você não tem autorização para ver os usuarios',
-        )
+async def usuarios(current_user: Current_user_admin, session: Session):
+
+    users = await session.scalars(select(User))
 
     return {'users': users}
 
@@ -115,7 +93,7 @@ async def usuarios(current_user: Current_user, session: Session):
     '/delete{username}', status_code=HTTPStatus.OK, response_model=Mensagem
 )
 async def delete_user(
-    username: str, current_user: Current_user, session: Session
+    username: str, current_user: Current_user_admin, session: Session
 ):
 
     user = await session.scalar(select(User).where(User.username == username))
