@@ -33,7 +33,7 @@ async def solicitacao_emprestimo(
     emprestimo.livro = format_name(emprestimo.livro)
     emprestimo.author = format_name(emprestimo.author)
 
-    if emprestimo.data_entrega == date.today():
+    if emprestimo.data_entrega <= date.today():
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Digite uma data de entrega válida!',
@@ -46,7 +46,7 @@ async def solicitacao_emprestimo(
     if not author:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Author {emprestimo.author} não encontrado!',
+            detail=f'Author: {emprestimo.author} não encontrado!',
         )
 
     livro = await session.scalar(
@@ -58,13 +58,13 @@ async def solicitacao_emprestimo(
     if not livro:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Author {emprestimo.name} não encontrado!',
+            detail=f'Livro: {emprestimo.livro} não encontrado!',
         )
 
     if livro.estoque < 1:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail=f'Livro {emprestimo.livro} sem estoque!',
+            detail=f'Livro: {emprestimo.livro} sem estoque!',
         )
 
     new_emprestimo = Empretimos(
@@ -124,12 +124,6 @@ async def empretimos_ativos(user: UserT, session: Session):
         )
     )
 
-    if not lista:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Você não tem emprestimos ativos',
-        )
-
     for emprestimos in lista:
         lista_emprestimos.append({
             'livro': emprestimos.livro.name,
@@ -156,11 +150,23 @@ async def devolucao_emprestimo(
         select(Romancistas).where(Romancistas.name == livro.nome_author)
     )
 
+    if not author:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Author: {livro.nome_author} não encontrado!',
+        )
+
     livro_emprestado = await session.scalar(
         select(Livros).where(
             Livros.name == livro.nome_livro, Livros.author_id == author.id
         )
     )
+
+    if not livro_emprestado:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Livro: {livro.nome_livro} não encontrado!',
+        )
 
     emprestimo = await session.scalar(
         select(Empretimos).where(
@@ -173,7 +179,7 @@ async def devolucao_emprestimo(
     if not emprestimo:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='Você não tem emprestimos ativos',
+            detail=f'Você não pegou o livro: {livro.nome_livro} emprestado.',
         )
 
     emprestimo.ativo = False
