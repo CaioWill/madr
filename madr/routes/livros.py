@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from madr.database_conect import get_session
 from madr.models import Livros, Romancistas, User
 from madr.schemas.schema import Mensagem
-from madr.schemas.schema_romancista import DelLivro, ListLivros, LivrosSchema
+from madr.schemas.schema_romancista import (
+    DelLivro,
+    ListLivros,
+    LivrosPublic,
+    LivrosSchema,
+)
 from madr.security import format_name, get_current, get_current_admin
 
 router = APIRouter(prefix='/livros', tags=['livros'])
@@ -21,13 +26,19 @@ Get_current = Annotated[User, Depends(get_current)]
 @router.post(
     '/adicionar_livro',
     status_code=HTTPStatus.CREATED,
-    response_model=LivrosSchema,
+    response_model=LivrosPublic,
 )
 async def adicionar_livro(
     livro: LivrosSchema, user: Get_current_admin, session: Session
 ):
     livro.name = format_name(livro.name)
     livro.author = format_name(livro.author)
+
+    if livro.estoque < 0:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Digite um valor de estoque valido',
+        )
 
     author = await session.scalar(
         select(Romancistas).where(Romancistas.name == livro.author)
@@ -51,7 +62,7 @@ async def adicionar_livro(
         name=livro.name,
         publication=livro.publication,
         author_id=author.id,
-        author=author.name,
+        estoque=livro.estoque,
     )
 
     session.add(new_livro)
