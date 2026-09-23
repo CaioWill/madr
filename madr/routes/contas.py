@@ -27,7 +27,7 @@ Current_user = Annotated[User, Depends(get_current)]
 async def criar_conta(session: Session, user: UserSchema):
 
     # Formatação do username
-    user.name = format_name(user.name)
+    user.username = format_name(user.username)
 
     # Procurando se o novo usuario não da conflito com os campos uniques
     response = await session.scalar(
@@ -72,7 +72,7 @@ async def update_user(
     current_user: Current_user,
 ):
 
-    current_user.username = user.username
+    current_user.username = format_name(user.username)
     # alterando a senha limpa recebida para um hash
     current_user.password = criptografar(user.password)
 
