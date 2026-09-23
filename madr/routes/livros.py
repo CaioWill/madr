@@ -52,7 +52,7 @@ async def adicionar_livro(
     livros_author = author.livros
 
     for livro_existente in livros_author:
-        if livro_existente == livro.name:
+        if livro_existente.name == livro.name:
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
                 detail='Livro já cadastrado no author!',
@@ -121,9 +121,19 @@ async def deletar_livro(
     livro.livro = format_name(livro.livro)
     livro.author = format_name(livro.author)
 
+    author_id = await session.scalar(
+        select(Romancistas).where(Romancistas.name == livro.author)
+    )
+
+    if not author_id:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Autor: {livro.author} não encontrado!',
+        )
+
     livro_del = await session.scalar(
         select(Livros).where(
-            Livros.name == livro.livro, Livros.author == livro.author
+            Livros.name == livro.livro, Livros.author_id == author_id.id
         )
     )
 
