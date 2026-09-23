@@ -77,7 +77,9 @@ class Empretimos:
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id))
-    livros_id: Mapped[int] = mapped_column(ForeignKey(Livros.id))
+    livros_id: Mapped[int] = mapped_column(
+        ForeignKey(Livros.id, ondelete='CASCADE')
+    )
     data_solicitacao: Mapped[date] = mapped_column(
         init=False, server_default=func.now()
     )
