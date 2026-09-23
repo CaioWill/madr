@@ -51,6 +51,7 @@ async def test_criacao_de_usuario_time(create_user, session: AsyncSession):
         'is_admin': False,
         'criacao': datetime(2026, 8, 21, 0, 0),
         'atualizacao': datetime(2026, 8, 21, 0, 0),
+        'empretimos': [],
     }
 
 
