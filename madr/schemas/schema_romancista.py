@@ -15,10 +15,18 @@ class LivrosSchema(BaseModel):
     name: str
     publication: date
     author: str
+    estoque: int
+
+
+class LivrosPublic(BaseModel):
+    name: str
+    publication: date
+    author_id: int
+    estoque: int
 
 
 class ListLivros(BaseModel):
-    livros: list[LivrosSchema]
+    livros: list[LivrosPublic]
 
 
 class DelLivro(BaseModel):
