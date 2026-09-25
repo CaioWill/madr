@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
+from freezegun import freeze_time
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -121,6 +122,48 @@ def user_admin(create_user, client, token):
     )
 
     return user
+
+
+@pytest.fixture
+def create_author(user_admin, token, client):
+    autor = client.post(
+        '/autores/',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'name': 'test'},
+    )
+
+    return autor
+
+
+@pytest.fixture
+def create_book(user_admin, token, create_author, client):
+    livro = client.post(
+        '/livros/adicionar_livro',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'name': 'testest',
+            'author': 'test',
+            'publication': '2026-08-22',
+            'estoque': 1,
+        },
+    )
+    return livro
+
+
+@pytest.fixture
+def creat_empretimo(user_admin, token, create_book, client):
+    with freeze_time('2026-08-21'):
+        empretimo = client.post(
+            '/emprestimos/',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'livro': 'testest',
+                'author': 'test',
+                'data_entrega': '2026-08-22',
+            },
+        )
+
+    return empretimo
 
 
 @pytest.fixture(autouse=True)
