@@ -29,6 +29,12 @@ class ListLivros(BaseModel):
     livros: list[LivrosPublic]
 
 
+class LivrosPut(BaseModel):
+    name: str
+    author: str
+    new_inventory: int
+
+
 class DelLivro(BaseModel):
     author: str
     livro: str
