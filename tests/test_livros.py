@@ -1,5 +1,10 @@
 from http import HTTPStatus
 
+import pytest
+from sqlalchemy import select
+
+from madr.models import Livros
+
 
 def test_criar_livro(user_admin, token, create_author, client):
     response = client.post(
@@ -147,6 +152,68 @@ def test_listar_livros_author_nao_existente(
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'Author não encontrado!'}
+
+
+@pytest.mark.asyncio
+async def test_atualizar_estoque(
+    user_admin, token, create_book, client, session
+):
+
+    livro = await session.scalar(select(Livros).where(Livros.id == 1))
+
+    assert livro.estoque == 1
+
+    response = client.put(
+        '/livros/atualizar_estoque',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'name': 'testest', 'author': 'test', 'new_inventory': 2},
+    )
+
+    test = 3
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['estoque'] == test
+
+
+def test_atualizar_estoque_nome_livro_errado(
+    user_admin, token, create_book, client
+):
+    response = client.put(
+        '/livros/atualizar_estoque',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'name': 'oioi', 'author': 'test', 'new_inventory': 2},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Livro: oioi não encontrado!'}
+
+
+def test_atualizar_estoque_nome_autor_errado(
+    user_admin, token, create_book, client
+):
+    response = client.put(
+        '/livros/atualizar_estoque',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'name': 'testest', 'author': 'oioi', 'new_inventory': 2},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Autor: oioi não encontrado!'}
+
+
+def test_atualizar_estoque_valor_estoque_menor_que_zero(
+    user_admin, token, create_book, client
+):
+    response = client.put(
+        '/livros/atualizar_estoque',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'name': 'testest', 'author': 'test', 'new_inventory': -2},
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {
+        'detail': 'Livros não podem ter um estoque a baixo de zero'
+    }
 
 
 def test_deletar_livros(user_admin, token, create_author, client):
