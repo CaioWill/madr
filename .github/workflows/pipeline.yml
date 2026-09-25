@@ -1,0 +1,38 @@
+name: pipeline
+on: ['push', 'pull_request']
+
+#job - trabalho
+jobs:
+  # nome do job
+  test:
+    # qual so
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Copia os arquivos do repositorio
+        uses: actions/checkout@v5
+
+      - name: Instalar o Python
+        # Uses action pronta
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+    
+      - name: Instalar o Poetry
+        run: pipx install poetry
+
+      - name: Instalando as dependễncias
+        run: poetry install
+
+      - name: Execuntando o Linter
+        run: poetry run ruff check
+
+      - name: Executando os testes
+        run: poetry run pytest -x -vv
+
+    # definindo as variavei de ambiente que o gitactions vai usar dos secrets
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL}}
+      SECRET_KEY: ${{ secrets.SECRET_KEY}}
+      ALGORITHM: ${{ secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
