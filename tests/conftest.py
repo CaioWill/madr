@@ -39,16 +39,15 @@ def engine():
     with PostgresContainer('postgres:16', driver='psycopg') as postgres:
         yield create_async_engine(postgres.get_connection_url())
 
+
 @pytest_asyncio.fixture
 async def session(engine):
 
     async with engine.begin() as conn:
         await conn.run_sync(tabelas.metadata.create_all)
 
-
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
-
 
     async with engine.begin() as conn:
         await conn.run_sync(tabelas.metadata.drop_all)
