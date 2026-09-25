@@ -7,10 +7,11 @@ from fastapi.testclient import TestClient
 from freezegun import freeze_time
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from testcontainers.postgres import PostgresContainer
 
 from madr.app import app
 from madr.database_conect import get_session
-from madr.models import User, tabelas
+from madr.models import User
 from madr.security import criptografar
 from madr.settings import Settings
 from tests.factorry import UserFactory
@@ -33,18 +34,10 @@ def client(session):
 
 
 # fixture da sessão
-@pytest_asyncio.fixture
-async def session():
-    engine = create_async_engine(Settings().TEST_DATABASE_URL)
-
-    async with engine.begin() as conn:
-        await conn.run_sync(tabelas.metadata.create_all)
-
-    async with AsyncSession(engine, expire_on_commit=False) as session:
-        yield session
-
-    async with engine.begin() as conn:
-        await conn.run_sync(tabelas.metadata.drop_all)
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:16', driver='psycopg') as postgres:
+        yield create_async_engine(postgres.get_connection_url())
 
 
 # gancho para alterar o time
