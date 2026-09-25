@@ -17,4 +17,4 @@ app.include_router(emprestimos.router)
 
 @app.get('/', status_code=HTTPStatus.OK, response_model=Mensagem)
 def pagina_inicial():
-    return {'mensagem': 'olá'}
+    return {'mensagem': 'Olá, Adicione um /docs no link.'}
