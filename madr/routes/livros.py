@@ -12,6 +12,7 @@ from madr.schemas.schema_romancista import (
     DelLivro,
     ListLivros,
     LivrosPublic,
+    LivrosPut,
     LivrosSchema,
 )
 from madr.security import format_name, get_current, get_current_admin
@@ -107,6 +108,55 @@ async def listar_livros_de_author(
     )
 
     return {'livros': livros}
+
+
+@router.put(
+    '/atualizar_estoque',
+    response_model=LivrosPublic,
+    status_code=HTTPStatus.OK,
+)
+async def atualizar_estoque(
+    livro: LivrosPut, user: Get_current_admin, session: Session
+):
+
+    livro.name = format_name(livro.name)
+    livro.author = format_name(livro.author)
+
+    author = await session.scalar(
+        select(Romancistas).where(Romancistas.name == livro.author)
+    )
+
+    if not author:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Autor: {livro.author} não encontrado!',
+        )
+
+    livro_put = await session.scalar(
+        select(Livros).where(
+            Livros.name == livro.name, Livros.author_id == author.id
+        )
+    )
+
+    if not livro_put:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Livro: {livro.name} não encontrado!',
+        )
+
+    livro_put.estoque += livro.new_inventory
+
+    if livro_put.estoque < 0:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Livros não podem ter um estoque a baixo de zero',
+        )
+
+    session.add(livro_put)
+    await session.commit()
+    await session.refresh(livro_put)
+
+    return livro_put
 
 
 @router.delete(
