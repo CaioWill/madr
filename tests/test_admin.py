@@ -35,7 +35,7 @@ def test_tornando_outros_usuarios_admin(
     user_admin, outher_user, client, token
 ):
     response = client.put(
-        '/admin/credenciais',
+        '/admin/loans',
         headers={'Authorization': f'Bearer {token}'},
         json={'username': 'test1', 'credencial': 'admin'},
     )
@@ -47,7 +47,7 @@ def test_tentando_alterar_credencial_de_outra_conta_sem_Ser_admin(
     create_user, outher_user, client, token
 ):
     response = client.put(
-        '/admin/credenciais',
+        '/admin/loans',
         headers={'Authorization': f'Bearer {token}'},
         json={'username': 'test1', 'credencial': 'admin'},
     )
@@ -59,19 +59,22 @@ def test_tentando_alterar_credencial_de_uma_conta_inexistente(
     user_admin, client, token
 ):
     response = client.put(
-        '/admin/credenciais',
+        '/admin/loans',
         headers={'Authorization': f'Bearer {token}'},
         json={'username': 'test1', 'credencial': 'admin'},
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {
+        'detail': 'Usuario não encontrado'
+    }
 
 
 def test_tentando_alterar_credencial_com_um_valor_incorreto(
     user_admin, outher_user, client, token
 ):
     response = client.put(
-        '/admin/credenciais',
+        '/admin/loans',
         headers={'Authorization': f'Bearer {token}'},
         json={'username': 'test1', 'credencial': 'test'},
     )
@@ -83,7 +86,7 @@ def test_listando_usuarios_da_aplicacao(
     user_admin, outher_user, client, token
 ):
     response = client.get(
-        '/admin/listar_usuarios',
+        '/admin/list_users',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -104,7 +107,7 @@ def test_nao_autorizado_para_listar_usuarios_da_aplicacao(
     create_user, outher_user, client, token
 ):
     response = client.get(
-        '/admin/listar_usuarios',
+        '/admin/list_users',
         headers={'Authorization': f'Bearer {token}'},
     )
 
