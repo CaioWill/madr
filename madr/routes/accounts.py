@@ -22,10 +22,21 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 Current_user = Annotated[User, Depends(get_current)]
 
 
-# Criação de novos usuarios
-@router.post('/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
-async def criar_conta(session: Session, user: UserSchema):
+@router.post(
+    '/',
+    status_code=HTTPStatus.CREATED,
+    response_model=UserPublic,
+    summary='Criação de usuários',
+    response_description='Usuário cadastrado com sucesso.',
+)
+async def creat_accounts(session: Session, user: UserSchema):
+    """
+    Cadastrar um novo usuário na aplicação
 
+    - **username**: Nome do usuário.
+    - **email**: Email da conta.
+    - **password**: Senha da conta.
+    """
     # Formatação do username
     user.username = format_name(user.username)
 
@@ -65,13 +76,20 @@ async def criar_conta(session: Session, user: UserSchema):
     '/update_user',  # adicionamos a variavel, paramentro da url
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
+    summary='Atualização de usuários.',
+    response_description='Atualização realizada com sucesso!',
 )
 async def update_user(
     user: UserUpdate,
     session: Session,
     current_user: Current_user,
 ):
+    """
+    Fazer atualização de atributos do proprio usuários cadastrados no sistema
 
+    - **username**: Novo username.
+    - **password**: Nova senha.
+    """
     current_user.username = format_name(user.username)
     # alterando a senha limpa recebida para um hash
     current_user.password = criptografar(user.password)
@@ -89,13 +107,23 @@ async def update_user(
         await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
-            detail='User name already exists',
+            detail='Username já existe.',
         )
 
 
-@router.delete('/delete', status_code=HTTPStatus.OK, response_model=Mensagem)
+@router.delete(
+    '/delete',
+    status_code=HTTPStatus.OK,
+    response_model=Mensagem,
+    summary='Deletar sua Conta.',
+    response_description='Conta deletada com sucesso!',
+)
 async def delete_user(current_user: Current_user, session: Session):
+    """
+    Deletação da propria conta, não sendo possivel deletar contas de
+    outros usuarios
 
+    """
     name = current_user.username
 
     await session.delete(current_user)
