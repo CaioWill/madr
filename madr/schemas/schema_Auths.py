@@ -1,15 +1,25 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserSchema(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
+    username: str = Field(
+        description='Nome do usuário.', examples=['Lucas Azevedo']
+    )
+    email: EmailStr = Field(
+        description='Email da conta.', examples=['lucas@gmail.com']
+    )
+    password: str = Field(
+        description='Senha da conta.', examples=['senha123!']
+    )
 
 
 class UserUpdate(BaseModel):
-    username: str
-    password: str
+    username: str = Field(
+        description='Nome do usuário.', examples=['Lucas Azevedo']
+    )
+    password: str = Field(
+        description='Senha da conta.', examples=['senha123!']
+    )
 
 
 class UserPublic(BaseModel):
@@ -18,12 +28,17 @@ class UserPublic(BaseModel):
 
 
 class Keyadmin(BaseModel):
-    key: str
+    key: str = Field(description='Senha de administrador')
 
 
 class UpdateAdmin(BaseModel):
-    username: str
-    credencial: str
+    username: str = Field(
+        description='Nome do usuário.', examples=['Lucas Azevedo']
+    )
+    credencial: str = Field(
+        description='Alteração de credencial de uma conta.',
+        examples=[True, False],
+    )
 
 
 class AdminPublic(UserPublic):
