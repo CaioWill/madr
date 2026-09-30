@@ -107,7 +107,7 @@ def test_atualizacao_de_conta_conflito(
     )
 
     assert response.status_code == HTTPStatus.CONFLICT
-    assert response.json() == {'detail': 'User name already exists'}
+    assert response.json() == {'detail': 'Username já existe.'}
 
 
 def test_deletar_usuario(client, create_user, token):
