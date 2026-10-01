@@ -3,18 +3,18 @@ from http import HTTPStatus
 import pytest
 from sqlalchemy import select
 
-from madr.models import Livros
+from madr.models import Books
 
 
 def test_criar_livro(user_admin, token, create_author, client):
     response = client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
@@ -23,7 +23,7 @@ def test_criar_livro(user_admin, token, create_author, client):
         'name': 'testest',
         'publication': '2026-08-22',
         'author_id': 1,
-        'estoque': 1,
+        'stock': 1,
     }
 
 
@@ -31,13 +31,13 @@ def test_criar_livro_estoque_menor_que_0(
     user_admin, token, create_author, client
 ):
     response = client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': -1,
+            'stock': -1,
         },
     )
 
@@ -47,13 +47,13 @@ def test_criar_livro_estoque_menor_que_0(
 
 def test_criar_livro_sem_author(user_admin, token, client):
     response = client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
@@ -63,24 +63,24 @@ def test_criar_livro_sem_author(user_admin, token, client):
 
 def test_criar_livro_ja_existente(user_admin, token, create_author, client):
     client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
     response = client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
@@ -90,7 +90,7 @@ def test_criar_livro_ja_existente(user_admin, token, create_author, client):
 
 def test_listar_livros(create_user, create_author, token, client):
     response = client.get(
-        '/books/list_livros', headers={'Authorization': f'Bearer {token}'}
+        '/books/list_books', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert response.status_code == HTTPStatus.OK
@@ -101,18 +101,18 @@ def test_listar_livros_author(user_admin, token, create_author, client):
     author = 'test'
 
     client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': author,
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
     response = client.get(
-        f'/books/list_livros_{author}',
+        f'/books/list_books_{author}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -123,7 +123,7 @@ def test_listar_livros_author(user_admin, token, create_author, client):
                 'name': 'testest',
                 'publication': '2026-08-22',
                 'author_id': 1,
-                'estoque': 1,
+                'stock': 1,
             }
         ]
     }
@@ -135,23 +135,23 @@ def test_listar_livros_author_nao_existente(
     author = 'brandon'
 
     client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
     response = client.get(
-        f'/books/list_livros_{author}',
+        f'/books/list_books_{author}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'Author não encontrado!'}
+    assert response.json() == {'detail': 'Autor não encontrado!'}
 
 
 @pytest.mark.asyncio
@@ -159,12 +159,12 @@ async def test_atualizar_estoque(
     user_admin, token, create_book, client, session
 ):
 
-    livro = await session.scalar(select(Livros).where(Livros.id == 1))
+    book = await session.scalar(select(Books).where(Books.id == 1))
 
-    assert livro.estoque == 1
+    assert book.stock == 1
 
     response = client.put(
-        '/books/atualizar_estoque',
+        '/books/update_stock',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'testest', 'author': 'test', 'new_inventory': 2},
     )
@@ -172,14 +172,14 @@ async def test_atualizar_estoque(
     test = 3
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json()['estoque'] == test
+    assert response.json()['stock'] == test
 
 
 def test_atualizar_estoque_nome_livro_errado(
     user_admin, token, create_book, client
 ):
     response = client.put(
-        '/books/atualizar_estoque',
+        '/books/update_stock',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'oioi', 'author': 'test', 'new_inventory': 2},
     )
@@ -192,7 +192,7 @@ def test_atualizar_estoque_nome_autor_errado(
     user_admin, token, create_book, client
 ):
     response = client.put(
-        '/books/atualizar_estoque',
+        '/books/update_stock',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'testest', 'author': 'oioi', 'new_inventory': 2},
     )
@@ -205,7 +205,7 @@ def test_atualizar_estoque_valor_estoque_menor_que_zero(
     user_admin, token, create_book, client
 ):
     response = client.put(
-        '/books/atualizar_estoque',
+        '/books/update_stock',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'testest', 'author': 'test', 'new_inventory': -2},
     )
@@ -219,18 +219,18 @@ def test_atualizar_estoque_valor_estoque_menor_que_zero(
 def test_deletar_livros(user_admin, token, create_author, client):
     livro = 'testest'
     client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': livro,
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
     response = client.delete(
-        f'/books/deletar_livro?author=test&livro={livro}',
+        f'/books/delete_book?author=test&book={livro}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -244,20 +244,20 @@ def test_deletar_livros_que_nao_existe(
     user_admin, token, create_author, client
 ):
     client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
     livro = 'oioi'
 
     response = client.delete(
-        f'/books/deletar_livro?author=test&livro={livro}',
+        f'/books/delete_book?author=test&book={livro}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -272,18 +272,18 @@ def test_deletar_livros_nome_do_autor_errado(
     autor = 'oioi'
 
     client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': livro,
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
 
     response = client.delete(
-        f'/books/deletar_livro?author={autor}&livro={livro}',
+        f'/books/delete_book?author={autor}&book={livro}',
         headers={'Authorization': f'Bearer {token}'},
     )
 

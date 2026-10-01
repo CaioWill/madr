@@ -10,7 +10,7 @@ def test_criancao_de_romancista(user_admin, client, token):
 
     assert response.status_code == HTTPStatus.CREATED
     assert response.json() == {
-        'mensagem': 'Author: test adicionado com sucesso!'
+        'mensagem': 'Autor: test adicionado com sucesso!'
     }
 
 
@@ -28,7 +28,7 @@ def test_conflito_de_criancao_de_romancista(user_admin, client, token):
     )
 
     assert response.status_code == HTTPStatus.CONFLICT
-    assert response.json() == {'detail': 'Author já cadastrado.'}
+    assert response.json() == {'detail': 'Autor já cadastrado.'}
 
 
 def test_listar_autores(create_user, token, client):
@@ -84,4 +84,4 @@ def test_deletar_romancista_que_nao_existe(user_admin, token, client):
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': f'Author {autor} não encontrado!'}
+    assert response.json() == {'detail': f'Autor {autor} não encontrado!'}
