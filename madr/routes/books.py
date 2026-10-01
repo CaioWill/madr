@@ -6,13 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr.database_conect import get_session
-from madr.models import Livros, Romancistas, User
+from madr.models import Authors, Books, User
 from madr.schemas.schema import Mensagem
-from madr.schemas.schema_romancista import (
+from madr.schemas.schema_authors import (
+    BookUpdate,
     DelLivro,
-    ListLivros,
+    ListBooks,
     LivrosPublic,
-    LivrosPut,
     LivrosSchema,
 )
 from madr.security import format_name, get_current, get_current_admin
@@ -20,29 +20,39 @@ from madr.security import format_name, get_current, get_current_admin
 router = APIRouter(prefix='/books', tags=['books'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
-Get_current_admin = Annotated[User, Depends(get_current_admin)]
-Get_current = Annotated[User, Depends(get_current)]
+Get_admin = Annotated[User, Depends(get_current_admin)]
+Get_user = Annotated[User, Depends(get_current)]
 
 
 @router.post(
-    '/adicionar_livro',
+    '/create_book',
     status_code=HTTPStatus.CREATED,
     response_model=LivrosPublic,
+    summary='Criação de novos livros.',
+    response_description='Livro criado com sucesso!',
 )
-async def adicionar_livro(
-    livro: LivrosSchema, user: Get_current_admin, session: Session
-):
-    livro.name = format_name(livro.name)
-    livro.author = format_name(livro.author)
+async def create_book(book: LivrosSchema, user: Get_admin, session: Session):
+    """
+    Endpoint de criação de novos livros, para criar um novo livro
+    é necessario que o autor do livro ja esteja cadastrado.
 
-    if livro.estoque < 0:
+    - **name**: Nome do livro
+    - **publication**: Data de publicação
+    - **author**: Nome do autor
+    - **stock**: Quantidade do estoque
+    """
+
+    book.name = format_name(book.name)
+    book.author = format_name(book.author)
+
+    if book.stock < 0:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Digite um valor de estoque valido',
         )
 
     author = await session.scalar(
-        select(Romancistas).where(Romancistas.name == livro.author)
+        select(Authors).where(Authors.name == book.author)
     )
 
     if not author:
@@ -50,152 +60,171 @@ async def adicionar_livro(
             status_code=HTTPStatus.NOT_FOUND, detail='Author não encontrado!'
         )
 
-    livros_author = author.livros
+    books_author = author.books
 
-    for livro_existente in livros_author:
-        if livro_existente.name == livro.name:
+    for livro_existente in books_author:
+        if livro_existente.name == book.name:
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
                 detail='Livro já cadastrado no author!',
             )
 
-    new_livro = Livros(
-        name=livro.name,
-        publication=livro.publication,
+    new_book = Books(
+        name=book.name,
+        publication=book.publication,
         author_id=author.id,
-        estoque=livro.estoque,
+        stock=book.stock,
     )
 
-    session.add(new_livro)
+    session.add(new_book)
     await session.commit()
-    await session.refresh(new_livro)
+    await session.refresh(new_book)
 
-    return new_livro
-
-
-@router.get(
-    '/list_livros', response_model=ListLivros, status_code=HTTPStatus.OK
-)
-async def listar_livros(user: Get_current, session: Session):
-
-    livros = await session.scalars(select(Livros))
-
-    return {'livros': livros}
+    return new_book
 
 
 @router.get(
-    '/list_livros_{author}',
-    response_model=ListLivros,
+    '/list_books',
+    response_model=ListBooks,
     status_code=HTTPStatus.OK,
+    summary='Listar livros cadastrados.',
+    response_description='Livros cadastrados:',
 )
-async def listar_livros_de_author(
-    author: str, user: Get_current, session: Session
-):
+async def list_books(user: Get_user, session: Session):
+    """
+    Endpoit para listar os livros que foram cadastrados no banco de dados.
+    """
+    books = await session.scalars(select(Books))
 
+    return {'livros': books}
+
+
+@router.get(
+    '/list_books_{author}',
+    response_model=ListBooks,
+    status_code=HTTPStatus.OK,
+    summary='Listar livros por autor.',
+    response_description='Livros do autor selecionado:',
+)
+async def list_books_author(author: str, user: Get_user, session: Session):
+    """
+    Endpoint para listar livros de um autor especifico passado
+    pelo usuário.
+    """
     author = format_name(author)
 
     author_id = await session.scalar(
-        select(Romancistas).where(Romancistas.name == author)
+        select(Authors).where(Authors.name == author)
     )
 
     if not author_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Author não encontrado!'
+            status_code=HTTPStatus.NOT_FOUND, detail='Autor não encontrado!'
         )
 
-    livros = await session.scalars(
-        select(Livros).where(Livros.author_id == author_id.id)
+    books = await session.scalars(
+        select(Books).where(Books.author_id == author_id.id)
     )
 
-    return {'livros': livros}
+    return {'livros': books}
 
 
 @router.put(
-    '/atualizar_estoque',
+    '/update_stock',
     response_model=LivrosPublic,
     status_code=HTTPStatus.OK,
+    summary='Atualizar estoque do livro.',
+    response_description='Estoque do livro atualizado com sucesso!',
 )
-async def atualizar_estoque(
-    livro: LivrosPut, user: Get_current_admin, session: Session
-):
+async def update_stock(book: BookUpdate, user: Get_admin, session: Session):
+    """
+    Endpoint para atualizar o estoque do livro que o administrador passar.
 
-    livro.name = format_name(livro.name)
-    livro.author = format_name(livro.author)
+    - **author**: Nome do autor do livro.
+    - **name**: Nome do livro.
+    - **stock**: Nova quantidado do estoque do livro.
+    """
+    book.name = format_name(book.name)
+    book.author = format_name(book.author)
 
     author = await session.scalar(
-        select(Romancistas).where(Romancistas.name == livro.author)
+        select(Authors).where(Authors.name == book.author)
     )
 
     if not author:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Autor: {livro.author} não encontrado!',
+            detail=f'Autor: {book.author} não encontrado!',
         )
 
-    livro_put = await session.scalar(
-        select(Livros).where(
-            Livros.name == livro.name, Livros.author_id == author.id
+    update_book = await session.scalar(
+        select(Books).where(
+            Books.name == book.name, Books.author_id == author.id
         )
     )
 
-    if not livro_put:
+    if not update_book:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Livro: {livro.name} não encontrado!',
+            detail=f'Livro: {book.name} não encontrado!',
         )
 
-    livro_put.estoque += livro.new_inventory
+    update_book.stock += book.new_inventory
 
-    if livro_put.estoque < 0:
+    if update_book.stock < 0:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Livros não podem ter um estoque a baixo de zero',
         )
 
-    session.add(livro_put)
+    session.add(update_book)
     await session.commit()
-    await session.refresh(livro_put)
+    await session.refresh(update_book)
 
-    return livro_put
+    return update_book
 
 
 @router.delete(
-    '/deletar_livro', response_model=Mensagem, status_code=HTTPStatus.OK
+    '/delete_book',
+    response_model=Mensagem,
+    status_code=HTTPStatus.OK,
+    summary='Deletar livros.',
+    response_description='Livro deletado com sucesso!',
 )
-async def deletar_livro(
-    livro: Annotated[DelLivro, Query()],
-    user: Get_current_admin,
+async def delete_book(
+    book: Annotated[DelLivro, Query()],
+    user: Get_admin,
     session: Session,
 ):
+    """
+    Endpoit para deletar livros cadastrados.
+    """
+    book.book = format_name(book.book)
+    book.author = format_name(book.author)
 
-    livro.livro = format_name(livro.livro)
-    livro.author = format_name(livro.author)
-
-    author_id = await session.scalar(
-        select(Romancistas).where(Romancistas.name == livro.author)
+    author = await session.scalar(
+        select(Authors).where(Authors.name == book.author)
     )
 
-    if not author_id:
+    if not author:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Autor: {livro.author} não encontrado!',
+            detail=f'Autor: {book.author} não encontrado!',
         )
 
     livro_del = await session.scalar(
-        select(Livros).where(
-            Livros.name == livro.livro, Livros.author_id == author_id.id
+        select(Books).where(
+            Books.name == book.book, Books.author_id == author.id
         )
     )
 
     if not livro_del:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Livro: {livro.livro} não encontrado!',
+            detail=f'Livro: {book.book} não encontrado!',
         )
 
     await session.delete(livro_del)
     await session.commit()
 
-    return {
-        'mensagem': f'Livro {livro.livro} do author {livro.author} deletado'
-    }
+    return {'mensagem': f'Livro {book.book} do author {book.author} deletado'}
