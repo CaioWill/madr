@@ -49,9 +49,9 @@ async def test_criacao_de_usuario_time(create_user, session: AsyncSession):
         'email': 'test0@test.com',
         'password': True,
         'is_admin': False,
-        'criacao': datetime(2026, 8, 21, 0, 0),
-        'atualizacao': datetime(2026, 8, 21, 0, 0),
-        'empretimos': [],
+        'create_at': datetime(2026, 8, 21, 0, 0),
+        'update_at': datetime(2026, 8, 21, 0, 0),
+        'loans': [],
     }
 
 
@@ -107,7 +107,7 @@ def test_atualizacao_de_conta_conflito(
     )
 
     assert response.status_code == HTTPStatus.CONFLICT
-    assert response.json() == {'detail': 'User name already exists'}
+    assert response.json() == {'detail': 'Username já existe.'}
 
 
 def test_deletar_usuario(client, create_user, token):

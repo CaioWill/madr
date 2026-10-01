@@ -4,7 +4,7 @@ import pytest
 from freezegun import freeze_time
 from sqlalchemy import select
 
-from madr.models import Livros
+from madr.models import Books
 
 
 def test_criando_um_emprestimo(
@@ -13,11 +13,11 @@ def test_criando_um_emprestimo(
 
     assert creat_empretimo.status_code == HTTPStatus.CREATED
     assert creat_empretimo.json() == {
-        'solicitador': 'test0',
-        'livro': 'testest',
+        'book': 'testest',
         'author': 'test',
-        'data_entrega': '2026-08-22',
-        'ativo': True,
+        'date_deliver': '2026-08-22',
+        'to_request': 'test0',
+        'active': True,
     }
 
 
@@ -26,21 +26,21 @@ def test_criando_um_emprestimo_data_de_entrega_errada(
 ):
     with freeze_time('2026-08-21'):
         response01 = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
-                'livro': 'testest',
+                'book': 'testest',
                 'author': 'test',
-                'data_entrega': '2026-08-20',
+                'date_deliver': '2026-08-20',
             },
         )
         response02 = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
-                'livro': 'testest',
+                'book': 'testest',
                 'author': 'test',
-                'data_entrega': '2026-08-21',
+                'date_deliver': '2026-08-21',
             },
         )
 
@@ -61,12 +61,12 @@ def test_criando_um_emprestimo_nome_author_errado(
     with freeze_time('2026-08-21'):
         autor = 'oioi'
         response = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
-                'livro': 'testest',
+                'book': 'testest',
                 'author': autor,
-                'data_entrega': '2026-08-22',
+                'date_deliver': '2026-08-22',
             },
         )
 
@@ -80,12 +80,12 @@ def test_criando_um_emprestimo_nome_livro_errado(
     with freeze_time('2026-08-21'):
         livro = 'oioi'
         response = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
-                'livro': livro,
+                'book': livro,
                 'author': 'test',
-                'data_entrega': '2026-08-22',
+                'date_deliver': '2026-08-22',
             },
         )
 
@@ -98,24 +98,24 @@ def test_criando_um_emprestimo_livro_sem_estoque(
 ):
     livro = 'oioi'
     client.post(
-        '/livros/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': livro,
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 0,
+            'stock': 0,
         },
     )
 
     with freeze_time('2026-08-21'):
         response = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
-                'livro': livro,
+                'book': livro,
                 'author': 'test',
-                'data_entrega': '2026-08-22',
+                'date_deliver': '2026-08-22',
             },
         )
 
@@ -125,12 +125,12 @@ def test_criando_um_emprestimo_livro_sem_estoque(
 
 def test_listar_todos_emprestimos(user_admin, token, client):
     response = client.get(
-        '/emprestimos/listar_emprestimos',
+        '/loans/list_loans',
         headers={'Authorization': f'Bearer {token}'},
     )
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'emprestimos': []}
+    assert response.json() == {'loans': []}
 
 
 def test_listar_todos_emprestimos_com_emprestimo(
@@ -138,19 +138,19 @@ def test_listar_todos_emprestimos_com_emprestimo(
 ):
 
     response = client.get(
-        '/emprestimos/listar_emprestimos',
+        '/loans/list_loans',
         headers={'Authorization': f'Bearer {token}'},
     )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'emprestimos': [
+        'loans': [
             {
-                'solicitador': 'test0',
-                'livro': 'testest',
+                'to_request': 'test0',
+                'book': 'testest',
                 'author': 'test',
-                'data_entrega': '2026-08-22',
-                'ativo': True,
+                'date_deliver': '2026-08-22',
+                'active': True,
             }
         ]
     }
@@ -161,19 +161,19 @@ def test_listar_emprestimos_ativos_user(
 ):
 
     response = client.get(
-        '/emprestimos/empretimos_ativos',
+        '/loans/loans_active',
         headers={'Authorization': f'Bearer {token}'},
     )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'emprestimos': [
+        'loans': [
             {
-                'solicitador': 'test0',
-                'livro': 'testest',
+                'to_request': 'test0',
+                'book': 'testest',
                 'author': 'test',
-                'data_entrega': '2026-08-22',
-                'ativo': True,
+                'date_deliver': '2026-08-22',
+                'active': True,
             }
         ]
     }
@@ -183,19 +183,20 @@ def test_listar_emprestimos_ativos_sem_ter_ativos(
     user_admin, create_book, token, client, creat_empretimo
 ):
 
-    client.put(
-        '/emprestimos/devolucao_emprestimo',
+    test = client.put(
+        '/loans/return_loans',
         headers={'Authorization': f'Bearer {token}'},
-        json={'nome_livro': 'testest', 'nome_author': 'test'},
+        json={'name_book': 'testest', 'name_author': 'test'},
     )
 
     response = client.get(
-        '/emprestimos/empretimos_ativos',
+        '/loans/loans_active',
         headers={'Authorization': f'Bearer {token}'},
     )
 
+    assert test.status_code == HTTPStatus.OK
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'emprestimos': []}
+    assert response.json() == {'loans': []}
 
 
 @pytest.mark.asyncio
@@ -203,19 +204,19 @@ async def test_devolver_livro(
     user_admin, creat_empretimo, token, client, session
 ):
 
-    livro = await session.scalar(select(Livros).where(Livros.id == 1))
+    book = await session.scalar(select(Books).where(Books.id == 1))
 
-    assert livro.estoque == 0
+    assert book.stock == 0
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/return_loans',
         headers={'Authorization': f'Bearer {token}'},
-        json={'nome_livro': 'testest', 'nome_author': 'test'},
+        json={'name_book': 'testest', 'name_author': 'test'},
     )
 
-    livro = await session.scalar(select(Livros).where(Livros.id == 1))
+    book = await session.scalar(select(Books).where(Books.id == 1))
 
-    assert livro.estoque == 1
+    assert book.stock == 1
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -228,9 +229,9 @@ def test_devolver_livro_nome_author_errado(
 ):
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/return_loans',
         headers={'Authorization': f'Bearer {token}'},
-        json={'nome_livro': 'testest', 'nome_author': 'oioi'},
+        json={'name_book': 'testest', 'name_author': 'oioi'},
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -242,9 +243,9 @@ def test_devolver_livro_nome_livro_errado(
 ):
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/return_loans',
         headers={'Authorization': f'Bearer {token}'},
-        json={'nome_livro': 'oioi', 'nome_author': 'test'},
+        json={'name_book': 'oioi', 'name_author': 'test'},
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -256,9 +257,9 @@ def test_devolver_livro_sem_ter_pego_ele(
 ):
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/return_loans',
         headers={'Authorization': f'Bearer {token}'},
-        json={'nome_livro': 'testest', 'nome_author': 'test'},
+        json={'name_book': 'testest', 'name_author': 'test'},
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
