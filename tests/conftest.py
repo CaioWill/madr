@@ -64,11 +64,11 @@ def _mock_db_time(*, model, time=time):
         # (Target) é o objeto
 
         # hasattr verifica se objeto que veio tem o atributo antes de replace
-        if hasattr(target, 'criacao'):
-            target.criacao = time
+        if hasattr(target, 'create_at'):
+            target.create_at = time
 
-        if hasattr(target, 'atualizacao'):
-            target.atualizacao = time
+        if hasattr(target, 'update_at'):
+            target.update_at = time
 
     # é tipo o trigger do postgre no python
     event.listen(model, 'before_insert', fake_time_hook)
@@ -144,13 +144,13 @@ def create_author(user_admin, token, client):
 @pytest.fixture
 def create_book(user_admin, token, create_author, client):
     livro = client.post(
-        '/books/adicionar_livro',
+        '/books/create_book',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
             'author': 'test',
             'publication': '2026-08-22',
-            'estoque': 1,
+            'stock': 1,
         },
     )
     return livro
@@ -163,9 +163,9 @@ def creat_empretimo(user_admin, token, create_book, client):
             '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
-                'livro': 'testest',
+                'book': 'testest',
                 'author': 'test',
-                'data_entrega': '2026-08-22',
+                'date_deliver': '2026-08-22',
             },
         )
 
