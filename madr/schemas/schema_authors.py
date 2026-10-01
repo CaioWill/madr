@@ -20,30 +20,38 @@ class LivrosSchema(BaseModel):
     )
     author: str = Field(
         description='Nome do Autor do livro cadastrado',
-        examples=['Brandon Sanderson']
+        examples=['Brandon Sanderson'],
     )
-    estoque: int = Field(
-        description='Quantidade do estoque.', examples=[2]
-    )
+    stock: int = Field(description='Quantidade do estoque.', examples=[2])
 
 
 class LivrosPublic(BaseModel):
     name: str
     publication: date
     author_id: int
-    estoque: int
+    stock: int
 
 
-class ListLivros(BaseModel):
+class ListBooks(BaseModel):
     livros: list[LivrosPublic]
 
 
-class LivrosPut(BaseModel):
-    name: str
-    author: str
-    new_inventory: int
+class BookUpdate(BaseModel):
+    author: str = Field(
+        description='Nome do autor cadastrado.', examples=['Brando Sanderson']
+    )
+    name: str = Field(
+        description='Nome do Livro cadastrado.', examples=['Mistborn']
+    )
+    new_inventory: int = Field(
+        description='Noo valor do estoque do livro', examples=[32]
+    )
 
 
 class DelLivro(BaseModel):
-    author: str
-    livro: str
+    author: str = Field(
+        description='Nome do autor cadastrado.', examples=['Brando Sanderson']
+    )
+    book: str = Field(
+        description='Nome do Livro cadastrado.', examples=['Mistborn']
+    )
