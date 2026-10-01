@@ -1,10 +1,12 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RomancistaSchema(BaseModel):
-    name: str
+    name: str = Field(
+        description='Nome do autor.', examples=['Brando Sanderson']
+    )
 
 
 class ListRomancistas(BaseModel):
@@ -12,10 +14,17 @@ class ListRomancistas(BaseModel):
 
 
 class LivrosSchema(BaseModel):
-    name: str
-    publication: date
-    author: str
-    estoque: int
+    name: str = Field(description='Nome do livro.', examples=['Mistborn'])
+    publication: date = Field(
+        description='Data da publicação', examples=['2000-10-10']
+    )
+    author: str = Field(
+        description='Nome do Autor do livro cadastrado',
+        examples=['Brandon Sanderson']
+    )
+    estoque: int = Field(
+        description='Quantidade do estoque.', examples=[2]
+    )
 
 
 class LivrosPublic(BaseModel):
