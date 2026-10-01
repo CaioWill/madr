@@ -7,189 +7,218 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr.database_conect import get_session
-from madr.models import Empretimos, Livros, Romancistas, User
+from madr.models import Authors, Books, Loans, User
 from madr.schemas.schema import Mensagem
-from madr.schemas.schema_empretimos import (
-    DevolverEmprestimo,
-    Emprestimos_public,
-    EmprestimosSchema,
-    ListEmprestimos,
+from madr.schemas.schema_loans import (
+    ListLoans,
+    LoansPublic,
+    LoansSchema,
+    ReturnLoans,
 )
 from madr.security import format_name, get_current, get_current_admin
 
 router = APIRouter(prefix='/loans', tags=['emprestimos'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
-Admin = Annotated[User, Depends(get_current_admin)]
-UserT = Annotated[User, Depends(get_current)]
+Get_admin = Annotated[User, Depends(get_current_admin)]
+Get_user = Annotated[User, Depends(get_current)]
 
 
 @router.post(
-    '/', status_code=HTTPStatus.CREATED, response_model=Emprestimos_public
+    '/',
+    status_code=HTTPStatus.CREATED,
+    response_model=LoansPublic,
+    summary='Criação de emprestimos de livros.',
+    response_description='Emprestimo realizado com sucesso.',
 )
-async def solicitacao_emprestimo(
-    emprestimo: EmprestimosSchema, user: UserT, session: Session
+async def to_resquest_loans(
+    loans: LoansSchema, user: Get_user, session: Session
 ):
-    emprestimo.livro = format_name(emprestimo.livro)
-    emprestimo.author = format_name(emprestimo.author)
+    """
+    Endpoint de criação de emprestimos de livros cadastrados na
+    conta do usuario que fez o emprestimo.
 
-    if emprestimo.data_entrega <= date.today():
+    - **book**: Nome do livro cadastrado.
+    - **author**: Nome do autor do livro.
+    - **date_deliver**: data de entrega do livro.
+    """
+    loans.book = format_name(loans.book)
+    loans.author = format_name(loans.author)
+
+    if loans.date_deliver <= date.today():
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Digite uma data de entrega válida!',
         )
 
     author = await session.scalar(
-        select(Romancistas).where(Romancistas.name == emprestimo.author)
+        select(Authors).where(Authors.name == loans.author)
     )
 
     if not author:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Author: {emprestimo.author} não encontrado!',
+            detail=f'Author: {loans.author} não encontrado!',
         )
 
-    livro = await session.scalar(
-        select(Livros).where(
-            Livros.name == emprestimo.livro, Livros.author_id == author.id
+    book = await session.scalar(
+        select(Books).where(
+            Books.name == loans.book, Books.author_id == author.id
         )
     )
 
-    if not livro:
+    if not book:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Livro: {emprestimo.livro} não encontrado!',
+            detail=f'Livro: {loans.book} não encontrado!',
         )
 
-    if livro.estoque < 1:
+    if book.stock < 1:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail=f'Livro: {emprestimo.livro} sem estoque!',
+            detail=f'Livro: {loans.book} sem estoque!',
         )
 
-    new_emprestimo = Empretimos(
+    new_loans = Loans(
         user_id=user.id,
-        livros_id=livro.id,
-        data_entrega=emprestimo.data_entrega,
+        books_id=book.id,
+        date_deliver=loans.date_deliver,
     )
 
-    livro.estoque -= 1
+    book.stock -= 1
 
-    session.add(new_emprestimo)
-    session.add(livro)
+    session.add(new_loans)
+    session.add(book)
     await session.commit()
-    await session.refresh(new_emprestimo)
+    await session.refresh(new_loans)
 
-    response = Emprestimos_public(
-        solicitador=user.username,
-        livro=emprestimo.livro,
-        author=emprestimo.author,
-        data_entrega=emprestimo.data_entrega,
-        ativo=new_emprestimo.ativo,
+    response = LoansPublic(
+        to_request=user.username,
+        book=loans.book,
+        author=loans.author,
+        date_deliver=loans.date_deliver,
+        active=new_loans.active,
     )
 
     return response
 
 
 @router.get(
-    '/listar_emprestimos',
-    response_model=ListEmprestimos,
+    '/list_loans',
+    response_model=ListLoans,
     status_code=HTTPStatus.OK,
+    summary='Listar emprestimos cadastrados.',
+    response_description='Emprestimos cadastrados:',
 )
-async def listar_emprestimos(user: Admin, session: Session):
-    lista_empretimos = []
+async def list_loans(user: Get_admin, session: Session):
+    """
+    Endpoint para administradores listarem todos os emprestimos
+    cadastrados no banco de dados.
+    """
+    list_loans = []
 
-    lista = await session.scalars(select(Empretimos))
-    for emprestimos in lista:
-        lista_empretimos.append({
-            'livro': emprestimos.livro.name,
-            'author': emprestimos.livro.author.name,
-            'solicitador': emprestimos.solicitador.username,
-            'data_entrega': emprestimos.data_entrega,
-            'ativo': emprestimos.ativo,
+    list = await session.scalars(select(Loans))
+
+    for loans in list:
+        list_loans.append({
+            'book': loans.book.name,
+            'author': loans.book.author.name,
+            'date_deliver': loans.date_deliver,
+            'to_request': loans.to_request.username,
+            'active': loans.active,
         })
-    return {'emprestimos': lista_empretimos}
+
+    return {'loans': list_loans}
 
 
 @router.get(
-    '/empretimos_ativos',
+    '/loans_active',
     status_code=HTTPStatus.OK,
-    response_model=ListEmprestimos,
+    response_model=ListLoans,
+    summary='Listar emprestimos ativos da conta.',
+    response_description='Emprestimos ativos na sua conta:',
 )
-async def empretimos_ativos(user: UserT, session: Session):
-    lista_emprestimos = []
-    lista = await session.scalars(
-        select(Empretimos).where(
-            Empretimos.user_id == user.id, Empretimos.ativo
-        )
+async def empretimos_ativos(user: Get_user, session: Session):
+    """
+    Endpoint para listar os empretimos ativos na conta que fez a
+    solicitação.
+    """
+    list_loans = []
+    list = await session.scalars(
+        select(Loans).where(Loans.user_id == user.id, Loans.active)
     )
 
-    for emprestimos in lista:
-        lista_emprestimos.append({
-            'livro': emprestimos.livro.name,
-            'author': emprestimos.livro.author.name,
-            'solicitador': emprestimos.solicitador.username,
-            'data_entrega': emprestimos.data_entrega,
-            'ativo': emprestimos.ativo,
+    for loans in list:
+        list_loans.append({
+            'book': loans.book.name,
+            'author': loans.book.author.name,
+            'to_request': loans.to_request.username,
+            'date_deliver': loans.date_deliver,
+            'active': loans.active,
         })
 
-    return {'emprestimos': lista_emprestimos}
+    return {'loans': list_loans}
 
 
 @router.put(
-    '/devolucao_emprestimo', status_code=HTTPStatus.OK, response_model=Mensagem
+    '/return_loans',
+    status_code=HTTPStatus.OK,
+    response_model=Mensagem,
+    summary='Devolução de empretimos.',
+    response_description='Emprestimo devolvido com sucesso!',
 )
-async def devolucao_emprestimo(
-    livro: DevolverEmprestimo, user: UserT, session: Session
-):
+async def return_loans(book: ReturnLoans, user: Get_user, session: Session):
+    """
+    Endpoint para usuarios devolverem seus emprestimos ativos.
 
-    livro.nome_livro = format_name(livro.nome_livro)
-    livro.nome_author = format_name(livro.nome_author)
+    - ****:
+    - ****:
+    """
+    book.name_book = format_name(book.name_book)
+    book.name_author = format_name(book.name_author)
 
     author = await session.scalar(
-        select(Romancistas).where(Romancistas.name == livro.nome_author)
+        select(Authors).where(Authors.name == book.name_author)
     )
 
     if not author:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Author: {livro.nome_author} não encontrado!',
+            detail=f'Author: {book.name_author} não encontrado!',
         )
 
-    livro_emprestado = await session.scalar(
-        select(Livros).where(
-            Livros.name == livro.nome_livro, Livros.author_id == author.id
-        )
-    )
-
-    if not livro_emprestado:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Livro: {livro.nome_livro} não encontrado!',
-        )
-
-    emprestimo = await session.scalar(
-        select(Empretimos).where(
-            Empretimos.user_id == user.id,
-            Empretimos.ativo,
-            Empretimos.livros_id == livro_emprestado.id,
+    book_leans = await session.scalar(
+        select(Books).where(
+            Books.name == book.name_book, Books.author_id == author.id
         )
     )
 
-    if not emprestimo:
+    if not book_leans:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=f'Você não pegou o livro: {livro.nome_livro} emprestado.',
+            detail=f'Livro: {book.name_book} não encontrado!',
         )
 
-    emprestimo.ativo = False
+    loans = await session.scalar(
+        select(Loans).where(
+            Loans.user_id == user.id,
+            Loans.active,
+            Loans.books_id == book_leans.id,
+        )
+    )
 
-    livro_emprestado.estoque += 1
+    if not loans:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=f'Você não pegou o livro: {book.name_book} emprestado.',
+        )
 
-    session.add(emprestimo)
+    loans.active = False
+
+    book_leans.stock += 1
+
+    session.add(loans)
     await session.commit()
-    await session.refresh(emprestimo)
+    await session.refresh(loans)
 
-    return {
-        'mensagem': f'Livro {livro_emprestado.name} devolvido com sucesso.'
-    }
+    return {'mensagem': f'Livro {book_leans.name} devolvido com sucesso.'}
