@@ -17,7 +17,7 @@ from madr.schemas.schema_empretimos import (
 )
 from madr.security import format_name, get_current, get_current_admin
 
-router = APIRouter(prefix='/emprestimos', tags=['emprestimos'])
+router = APIRouter(prefix='/loans', tags=['emprestimos'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 Admin = Annotated[User, Depends(get_current_admin)]
