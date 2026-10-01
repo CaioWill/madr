@@ -26,7 +26,7 @@ def test_criando_um_emprestimo_data_de_entrega_errada(
 ):
     with freeze_time('2026-08-21'):
         response01 = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'livro': 'testest',
@@ -35,7 +35,7 @@ def test_criando_um_emprestimo_data_de_entrega_errada(
             },
         )
         response02 = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'livro': 'testest',
@@ -61,7 +61,7 @@ def test_criando_um_emprestimo_nome_author_errado(
     with freeze_time('2026-08-21'):
         autor = 'oioi'
         response = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'livro': 'testest',
@@ -80,7 +80,7 @@ def test_criando_um_emprestimo_nome_livro_errado(
     with freeze_time('2026-08-21'):
         livro = 'oioi'
         response = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'livro': livro,
@@ -98,7 +98,7 @@ def test_criando_um_emprestimo_livro_sem_estoque(
 ):
     livro = 'oioi'
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': livro,
@@ -110,7 +110,7 @@ def test_criando_um_emprestimo_livro_sem_estoque(
 
     with freeze_time('2026-08-21'):
         response = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'livro': livro,
@@ -125,7 +125,7 @@ def test_criando_um_emprestimo_livro_sem_estoque(
 
 def test_listar_todos_emprestimos(user_admin, token, client):
     response = client.get(
-        '/emprestimos/listar_emprestimos',
+        '/loans/listar_emprestimos',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -138,7 +138,7 @@ def test_listar_todos_emprestimos_com_emprestimo(
 ):
 
     response = client.get(
-        '/emprestimos/listar_emprestimos',
+        '/loans/listar_emprestimos',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -161,7 +161,7 @@ def test_listar_emprestimos_ativos_user(
 ):
 
     response = client.get(
-        '/emprestimos/empretimos_ativos',
+        '/loans/empretimos_ativos',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -184,13 +184,13 @@ def test_listar_emprestimos_ativos_sem_ter_ativos(
 ):
 
     client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/devolucao_emprestimo',
         headers={'Authorization': f'Bearer {token}'},
         json={'nome_livro': 'testest', 'nome_author': 'test'},
     )
 
     response = client.get(
-        '/emprestimos/empretimos_ativos',
+        '/loans/empretimos_ativos',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -208,7 +208,7 @@ async def test_devolver_livro(
     assert livro.estoque == 0
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/devolucao_emprestimo',
         headers={'Authorization': f'Bearer {token}'},
         json={'nome_livro': 'testest', 'nome_author': 'test'},
     )
@@ -228,7 +228,7 @@ def test_devolver_livro_nome_author_errado(
 ):
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/devolucao_emprestimo',
         headers={'Authorization': f'Bearer {token}'},
         json={'nome_livro': 'testest', 'nome_author': 'oioi'},
     )
@@ -242,7 +242,7 @@ def test_devolver_livro_nome_livro_errado(
 ):
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/devolucao_emprestimo',
         headers={'Authorization': f'Bearer {token}'},
         json={'nome_livro': 'oioi', 'nome_author': 'test'},
     )
@@ -256,7 +256,7 @@ def test_devolver_livro_sem_ter_pego_ele(
 ):
 
     response = client.put(
-        '/emprestimos/devolucao_emprestimo',
+        '/loans/devolucao_emprestimo',
         headers={'Authorization': f'Bearer {token}'},
         json={'nome_livro': 'testest', 'nome_author': 'test'},
     )
