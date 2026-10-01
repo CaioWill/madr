@@ -17,7 +17,7 @@ from madr.schemas.schema_loans import (
 )
 from madr.security import format_name, get_current, get_current_admin
 
-router = APIRouter(prefix='/loans', tags=['emprestimos'])
+router = APIRouter(prefix='/loans', tags=['loans'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 Get_admin = Annotated[User, Depends(get_current_admin)]
@@ -171,8 +171,8 @@ async def return_loans(book: ReturnLoans, user: Get_user, session: Session):
     """
     Endpoint para usuarios devolverem seus emprestimos ativos.
 
-    - ****:
-    - ****:
+    - **name_book**: Nome do livro.
+    - **name_author**: Nome do autor do livro.
     """
     book.name_book = format_name(book.name_book)
     book.name_author = format_name(book.name_author)
