@@ -5,7 +5,13 @@ from fastapi import FastAPI
 from madr.routes import accounts, admin, auth, authors, books, loans
 from madr.schemas.schema import Mensagem
 
-app = FastAPI()
+app = FastAPI(
+    title='Biblioteca API',
+    description=(
+        'API para fazer o gerenciamento de autores, livros e emprestimos'
+    ),
+    version='1.0.1',
+)
 
 app.include_router(accounts.router)
 app.include_router(auth.router)
