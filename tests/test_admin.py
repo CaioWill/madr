@@ -65,9 +65,7 @@ def test_tentando_alterar_credencial_de_uma_conta_inexistente(
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {
-        'detail': 'Usuario não encontrado'
-    }
+    assert response.json() == {'detail': 'Usuário não encontrado'}
 
 
 def test_tentando_alterar_credencial_com_um_valor_incorreto(
@@ -140,4 +138,4 @@ def test_tentando_deletar_conta_de_usuarios_inexistente(
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': f'Usuario: {name} Não encontrado'}
+    assert response.json() == {'detail': f'Usuário: {name} Não encontrado'}
