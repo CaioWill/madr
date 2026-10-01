@@ -8,7 +8,7 @@ from madr.models import Livros
 
 def test_criar_livro(user_admin, token, create_author, client):
     response = client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -31,7 +31,7 @@ def test_criar_livro_estoque_menor_que_0(
     user_admin, token, create_author, client
 ):
     response = client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -47,7 +47,7 @@ def test_criar_livro_estoque_menor_que_0(
 
 def test_criar_livro_sem_author(user_admin, token, client):
     response = client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -63,7 +63,7 @@ def test_criar_livro_sem_author(user_admin, token, client):
 
 def test_criar_livro_ja_existente(user_admin, token, create_author, client):
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -74,7 +74,7 @@ def test_criar_livro_ja_existente(user_admin, token, create_author, client):
     )
 
     response = client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -90,7 +90,7 @@ def test_criar_livro_ja_existente(user_admin, token, create_author, client):
 
 def test_listar_livros(create_user, create_author, token, client):
     response = client.get(
-        '/livros/list_livros', headers={'Authorization': f'Bearer {token}'}
+        '/books/list_livros', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert response.status_code == HTTPStatus.OK
@@ -101,7 +101,7 @@ def test_listar_livros_author(user_admin, token, create_author, client):
     author = 'test'
 
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -112,7 +112,7 @@ def test_listar_livros_author(user_admin, token, create_author, client):
     )
 
     response = client.get(
-        f'/livros/list_livros_{author}',
+        f'/books/list_livros_{author}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -135,7 +135,7 @@ def test_listar_livros_author_nao_existente(
     author = 'brandon'
 
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -146,7 +146,7 @@ def test_listar_livros_author_nao_existente(
     )
 
     response = client.get(
-        f'/livros/list_livros_{author}',
+        f'/books/list_livros_{author}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -164,7 +164,7 @@ async def test_atualizar_estoque(
     assert livro.estoque == 1
 
     response = client.put(
-        '/livros/atualizar_estoque',
+        '/books/atualizar_estoque',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'testest', 'author': 'test', 'new_inventory': 2},
     )
@@ -179,7 +179,7 @@ def test_atualizar_estoque_nome_livro_errado(
     user_admin, token, create_book, client
 ):
     response = client.put(
-        '/livros/atualizar_estoque',
+        '/books/atualizar_estoque',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'oioi', 'author': 'test', 'new_inventory': 2},
     )
@@ -192,7 +192,7 @@ def test_atualizar_estoque_nome_autor_errado(
     user_admin, token, create_book, client
 ):
     response = client.put(
-        '/livros/atualizar_estoque',
+        '/books/atualizar_estoque',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'testest', 'author': 'oioi', 'new_inventory': 2},
     )
@@ -205,7 +205,7 @@ def test_atualizar_estoque_valor_estoque_menor_que_zero(
     user_admin, token, create_book, client
 ):
     response = client.put(
-        '/livros/atualizar_estoque',
+        '/books/atualizar_estoque',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'testest', 'author': 'test', 'new_inventory': -2},
     )
@@ -219,7 +219,7 @@ def test_atualizar_estoque_valor_estoque_menor_que_zero(
 def test_deletar_livros(user_admin, token, create_author, client):
     livro = 'testest'
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': livro,
@@ -230,7 +230,7 @@ def test_deletar_livros(user_admin, token, create_author, client):
     )
 
     response = client.delete(
-        f'/livros/deletar_livro?author=test&livro={livro}',
+        f'/books/deletar_livro?author=test&livro={livro}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -244,7 +244,7 @@ def test_deletar_livros_que_nao_existe(
     user_admin, token, create_author, client
 ):
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -257,7 +257,7 @@ def test_deletar_livros_que_nao_existe(
     livro = 'oioi'
 
     response = client.delete(
-        f'/livros/deletar_livro?author=test&livro={livro}',
+        f'/books/deletar_livro?author=test&livro={livro}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -272,7 +272,7 @@ def test_deletar_livros_nome_do_autor_errado(
     autor = 'oioi'
 
     client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': livro,
@@ -283,7 +283,7 @@ def test_deletar_livros_nome_do_autor_errado(
     )
 
     response = client.delete(
-        f'/livros/deletar_livro?author={autor}&livro={livro}',
+        f'/books/deletar_livro?author={autor}&livro={livro}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
