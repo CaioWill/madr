@@ -17,7 +17,7 @@ from madr.schemas.schema_romancista import (
 )
 from madr.security import format_name, get_current, get_current_admin
 
-router = APIRouter(prefix='/livros', tags=['livros'])
+router = APIRouter(prefix='/books', tags=['books'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 Get_current_admin = Annotated[User, Depends(get_current_admin)]
