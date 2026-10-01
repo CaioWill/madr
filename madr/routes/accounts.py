@@ -19,19 +19,19 @@ from madr.security import criptografar, format_name, get_current
 router = APIRouter(prefix='/login', tags=['login'])
 
 Session = Annotated[AsyncSession, Depends(get_session)]
-Current_user = Annotated[User, Depends(get_current)]
+Get_user = Annotated[User, Depends(get_current)]
 
 
 @router.post(
     '/',
     status_code=HTTPStatus.CREATED,
     response_model=UserPublic,
-    summary='Criação de usuários',
+    summary='Criação de usuários.',
     response_description='Usuário cadastrado com sucesso.',
 )
 async def creat_accounts(session: Session, user: UserSchema):
     """
-    Cadastrar um novo usuário na aplicação
+    Endpoit para cadastrar um novo usuário no banco de dados.
 
     - **username**: Nome do usuário.
     - **email**: Email da conta.
@@ -40,14 +40,12 @@ async def creat_accounts(session: Session, user: UserSchema):
     # Formatação do username
     user.username = format_name(user.username)
 
-    # Procurando se o novo usuario não da conflito com os campos uniques
     response = await session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
         )
     )
 
-    # Se o select retornar um user, mensagem de erro mostral qual esta igual
     if response:
         if response.username == user.username:
             raise HTTPException(
@@ -58,7 +56,6 @@ async def creat_accounts(session: Session, user: UserSchema):
                 status_code=HTTPStatus.CONFLICT, detail='Email já existente'
             )
 
-    # adicionando o novo user no db
     response = User(
         username=user.username,
         email=user.email,
@@ -71,9 +68,8 @@ async def creat_accounts(session: Session, user: UserSchema):
     return response
 
 
-# Endpoint para atualizar um novo usuario
 @router.put(
-    '/update_user',  # adicionamos a variavel, paramentro da url
+    '/update_user',
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
     summary='Atualização de usuários.',
@@ -82,19 +78,18 @@ async def creat_accounts(session: Session, user: UserSchema):
 async def update_user(
     user: UserUpdate,
     session: Session,
-    current_user: Current_user,
+    current_user: Get_user,
 ):
     """
-    Fazer atualização de atributos do proprio usuários cadastrados no sistema
+    Endpoint para fazer atualização de atributos do proprio usuários
+    cadastrados no sistema.
 
     - **username**: Novo username.
     - **password**: Nova senha.
     """
     current_user.username = format_name(user.username)
-    # alterando a senha limpa recebida para um hash
     current_user.password = criptografar(user.password)
 
-    # tentando fazer o commit da trasação
     try:
         session.add(current_user)
         await session.commit()
@@ -102,7 +97,6 @@ async def update_user(
 
         return current_user
 
-    # Caso dê erro de integridade
     except IntegrityError:
         await session.rollback()
         raise HTTPException(
@@ -118,11 +112,10 @@ async def update_user(
     summary='Deletar sua Conta.',
     response_description='Conta deletada com sucesso!',
 )
-async def delete_user(current_user: Current_user, session: Session):
+async def delete_user(current_user: Get_user, session: Session):
     """
-    Deletação da propria conta, não sendo possivel deletar contas de
-    outros usuarios
-
+    Endpoint para fazer a deletação da propria conta, não sendo possivel
+    deletar contas de outros usuários.
     """
     name = current_user.username
 
