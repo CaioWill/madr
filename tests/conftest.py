@@ -133,7 +133,7 @@ def user_admin(create_user, client, token):
 @pytest.fixture
 def create_author(user_admin, token, client):
     autor = client.post(
-        '/autores/',
+        '/authors/',
         headers={'Authorization': f'Bearer {token}'},
         json={'name': 'test'},
     )
@@ -144,7 +144,7 @@ def create_author(user_admin, token, client):
 @pytest.fixture
 def create_book(user_admin, token, create_author, client):
     livro = client.post(
-        '/livros/adicionar_livro',
+        '/books/adicionar_livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'testest',
@@ -160,7 +160,7 @@ def create_book(user_admin, token, create_author, client):
 def creat_empretimo(user_admin, token, create_book, client):
     with freeze_time('2026-08-21'):
         empretimo = client.post(
-            '/emprestimos/',
+            '/loans/',
             headers={'Authorization': f'Bearer {token}'},
             json={
                 'livro': 'testest',
